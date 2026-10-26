@@ -1,0 +1,26 @@
+{
+  "database": {
+    "host": "stage-db2.example.internal",
+    "port": 448,
+    "name": "STAGE_LOCATION",
+    "jdbc_jars": [
+      "C:\\ApprovedTools\\Db2\\db2jcc4.jar",
+      "C:\\ApprovedTools\\Db2\\DBA_PROVIDED_LICENSE.jar"
+    ],
+    "ssl_cert_location": "C:\\ApprovedTools\\Db2\\certs\\stage-db2.arm",
+    "properties": {
+      "currentSchema": "REPORTING"
+    }
+  },
+  "runtime": {
+    "jvm_path": null,
+    "jvm_options": ["-Xmx512m"],
+    "login_timeout_seconds": 30,
+    "network_timeout_seconds": 120,
+    "query_timeout_seconds": 900,
+    "fetch_size": 500,
+    "max_sql_bytes": 1048576,
+    "max_rows_per_sheet": 1048575,
+    "max_report_bytes": 20971520
+  }
+}

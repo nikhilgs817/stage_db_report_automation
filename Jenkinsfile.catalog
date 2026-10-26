@@ -1,0 +1,30 @@
+// Independent SQL catalog job. All parameter values and refresh triggers live in UI.
+node(params.AGENT_LABEL) {
+    timestamps {
+        try {
+            deleteDir()
+            timeout(time: params.JOB_TIMEOUT_MINUTES.toInteger(), unit: 'MINUTES') {
+                stage('Framework checkout') {
+                    checkout scm
+                }
+                stage('Refresh SQL catalog') {
+                    dir('.reports') {
+                        checkout scmGit(branches: [[name: params.REPORT_GIT_REF]],
+                            userRemoteConfigs: [[url: params.REPORT_REPO_URL,
+                                credentialsId: params.GIT_CREDENTIALS_ID]])
+                    }
+                    powershell(script: '''
+                        $ErrorActionPreference = 'Stop'
+                        & $env:PYTHON_EXE 'report_runner.py' catalog --repo-dir '.reports' --output 'sql-catalog.json'
+                        exit $LASTEXITCODE
+                    ''')
+                }
+                stage('Publish choices') {
+                    archiveArtifacts artifacts: 'sql-catalog.json', fingerprint: true
+                }
+            }
+        } finally {
+            deleteDir()
+        }
+    }
+}

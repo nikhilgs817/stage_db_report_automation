@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.py[cod]
+.run/
+.reports/
+output/
+config.local.json
+*.jar
+*.pem
+*.arm
+*.zip
