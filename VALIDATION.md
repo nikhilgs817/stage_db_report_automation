@@ -2,11 +2,12 @@
 
 ## Completed locally
 
-- **38 tests passed** on Windows with Python 3.12.10.
+- **39 tests passed** on Windows with Python 3.12.10.
 - Pinned dependencies installed in an isolated virtual environment; `pip check` reported no broken requirements.
 - Python source and tests compiled successfully.
 - Real temporary Git repositories verified committed-file catalogs, exact revision selection, dirty-file rejection, and symlink tree-mode exclusion.
 - Fake JDBC connections verified read-only transaction setup, rollback/cleanup, result streaming, and SQLSTATE/SQLCODE-only error diagnostics.
+- The runtime rejects JCC versions older than 4.29 before connecting, preventing silent loss of TLS hostname validation on an older driver.
 - Generated real XLSX workbooks were reopened to verify multiple result sheets, empty results, literal formula-like headers/values, NULLs, large integer/decimal preservation, and limit failures.
 - Mocked SMTP verified TLS setup, exact attachment filename, recipient validation, partial recipient refusal, notification status, MIME size limits, and failure notifications without attachments.
 - Integration review checked UI-only parameter declarations, credential binding boundaries, pinned Git checkout, timeout coverage, and Active Choices artifact permissions.

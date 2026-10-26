@@ -402,6 +402,12 @@ def db2_connection(config: dict[str, Any]):
         jpype.startJVM(*runtime["jvm_options"], jvmpath=runtime["jvm_path"],
                        classpath=database["jdbc_jars"], convertStrings=True)
     driver = jpype.JClass("com.ibm.db2.jcc.DB2Driver")()
+    driver_version = (int(driver.getMajorVersion()), int(driver.getMinorVersion()))
+    if driver_version < (4, 29):
+        raise ReportError(
+            "IBM JCC 4.29 or later is required for TLS hostname validation; "
+            "ask the DBA for an approved driver upgrade before connecting."
+        )
     driver_manager = jpype.JClass("java.sql.DriverManager")
     driver_manager.setLoginTimeout(runtime["login_timeout_seconds"])
     properties = jpype.JClass("java.util.Properties")()

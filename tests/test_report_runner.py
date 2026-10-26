@@ -415,6 +415,12 @@ class JdbcConnectionTests(unittest.TestCase):
         captured = {}
 
         class Driver:
+            def getMajorVersion(self):
+                return 4
+
+            def getMinorVersion(self):
+                return 29
+
             def connect(self, url, properties):
                 captured.update(url=url, properties=dict(properties))
                 return connection
@@ -439,6 +445,34 @@ class JdbcConnectionTests(unittest.TestCase):
         self.assertEqual(captured["properties"]["sslClientHostnameValidation"], "BASIC")
         self.assertEqual(captured["properties"]["user"], "svc-report")
         self.assertEqual(captured["properties"]["password"], "secret")
+
+    def test_older_jcc_is_rejected_before_connecting(self):
+        from types import SimpleNamespace
+
+        for major, minor in ((3, 72), (4, 0), (4, 28)):
+            with self.subTest(version=(major, minor)):
+                captured = {"connected": False}
+
+                class Driver:
+                    def getMajorVersion(self):
+                        return major
+
+                    def getMinorVersion(self):
+                        return minor
+
+                    def connect(self, url, properties):
+                        captured["connected"] = True
+                        raise AssertionError("An unsupported driver must never connect")
+
+                jpype = SimpleNamespace(isJVMStarted=lambda: True, JClass=lambda name: Driver)
+                config = {"database": {}, "runtime": dict(runner.RUNTIME_DEFAULTS)}
+                with patch.dict(sys.modules, {"jpype": jpype}), patch.dict(
+                    os.environ, {"DB2_USER": "svc-report", "DB2_PASSWORD": "secret"}
+                ):
+                    with self.assertRaisesRegex(runner.ReportError, "4.29 or later.*hostname validation"):
+                        with runner.db2_connection(config):
+                            self.fail("Unsupported JCC unexpectedly opened a connection")
+                self.assertFalse(captured["connected"])
 
 
 if __name__ == "__main__":

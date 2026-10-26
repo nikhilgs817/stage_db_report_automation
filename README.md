@@ -22,7 +22,7 @@ SMTP success means the relay accepted the message for every recipient. It cannot
 
 - An approved, supported **64-bit Python 3.10 or later**; this framework was locally tested with Python 3.12.
 - An approved **64-bit Java runtime** compatible with your IBM JCC driver. Python and the JVM must have matching architecture. An existing suitable agent Java installation can be used.
-- IBM **Data Server Driver for JDBC and SQLJ**, specifically `db2jcc4.jar`. Use an organization-approved driver version **4.29 or later**, compatible with your z/OS server. This framework explicitly requests TLS hostname validation, introduced in JCC 4.29.
+- IBM **Data Server Driver for JDBC and SQLJ**, specifically `db2jcc4.jar`. Use an organization-approved driver version **4.29 or later**, compatible with your z/OS server. This framework explicitly requests TLS hostname validation, introduced in JCC 4.29, and rejects older drivers before connecting.
 - The appropriate **Db2 Connect entitlement/license** for z/OS. Your DBA/licensing team must determine whether the installation uses server activation, a licensed gateway, or a client license JAR. Add a license JAR to the classpath only when your setup requires it; the sample license filename is a placeholder.
 - The approved database TLS certificate file, and the packages in `requirements.lock.txt`: JPype1, openpyxl, sqlparse, and their pinned dependencies.
 - Git for Windows and Windows PowerShell. Microsoft Excel, Office automation, VS Code, and a VS Code database plugin are not required.
