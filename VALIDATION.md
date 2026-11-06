@@ -5,7 +5,7 @@
 - **39 tests passed** on Windows with Python 3.12.10.
 - Pinned dependencies installed in an isolated virtual environment; `pip check` reported no broken requirements.
 - Python source and tests compiled successfully.
-- Real temporary Git repositories verified committed-file catalogs, exact revision selection, dirty-file rejection, and symlink tree-mode exclusion.
+- Real temporary Git repositories verified committed-file listing, exact revision selection, dirty-file rejection, and symlink tree-mode exclusion.
 - Fake JDBC connections verified read-only transaction setup, rollback/cleanup, result streaming, and SQLSTATE/SQLCODE-only error diagnostics.
 - The runtime rejects JCC versions older than 4.29 before connecting, preventing silent loss of TLS hostname validation on an older driver.
 - Generated real XLSX workbooks were reopened to verify multiple result sheets, empty results, literal formula-like headers/values, NULLs, large integer/decimal preservation, and limit failures.
@@ -29,3 +29,11 @@ Build status and report-generation status differ deliberately: an XLSX may be ge
 ## Jenkinsfile consolidation — 6 November 2026
 
 Catalog refresh and report generation now share one `Jenkinsfile`, selected by the UI-only `RUN_MODE` parameter. The dedicated catalog and report jobs retain separate parameter sets. The two production Python files are unchanged. Review confirms that catalog mode does not call database or email operations. Jenkins controller execution remains an environment acceptance check; no live Jenkins execution is claimed for this change.
+
+## Catalog job removed — 6 November 2026
+
+The separate catalog job, the `report_runner.py catalog` command and the `RUN_MODE` switch are removed; this supersedes the consolidation above. The `SCRIPT_SELECTION` Active Choices script now reads the committed `.sql` files and the approved branch's current commit from the GitLab API, so the dropdown cannot go stale. Choices keep the `path|commit` format, so revision pinning, Git verification and the report run are unchanged.
+
+- **40 tests passed** locally (Python 3.11, Linux). New tests check that `tracked_sql` lists only committed `.sql` files and that the `catalog` command no longer exists.
+- The dropdown script was run with Groovy 2.4.21 (the version Jenkins bundles) against a mock GitLab API, using stub Jenkins credential classes. It returned sorted, paginated `path|commit` choices, dropped a path containing `|`, and showed disabled messages for a missing credential, an HTTP 401 and a refused connection.
+- Not tested: a real Jenkins controller, Script Approval, or a real GitLab instance.
