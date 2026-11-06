@@ -2,7 +2,23 @@
 
 Run a reviewed SQL file from Git against stage **Db2 for z/OS**, create a real `.xlsx` workbook with the SQL file's base name, and email it to the stakeholders supplied on **Build with Parameters**. The agent is Windows. Python handles selection validation, query execution, Excel generation, mail, and result records. Jenkins handles checkout, credentials, orchestration, and build status.
 
-No parameter declarations, credentials, repository addresses, database addresses, recipients, or schedules are embedded in either Jenkinsfile. Configure parameter definitions and defaults manually in the Jenkins job UI. The database profile is an administrator-managed file on the agent, selected by a UI parameter.
+No parameter declarations, credentials, repository addresses, database addresses, recipients, or schedules are embedded in the Jenkinsfile. Configure parameter definitions and defaults manually in the Jenkins job UI. The database profile is an administrator-managed file on the agent, selected by a UI parameter.
+
+## Files needed to run
+
+The runtime has **one Jenkinsfile and two Python files**:
+
+- `Jenkinsfile`: runs either catalog refresh or report generation, selected by the UI parameter `RUN_MODE`. Both Jenkins jobs use this same file.
+- `report_runner.py`: lists SQL files, validates selections, connects to Db2, and creates the Excel workbook.
+- `report_mailer.py`: validates mail settings and sends report or failure emails.
+
+Supporting setup files:
+
+- `requirements.lock.txt`: installs the exact Python package versions once on the agent. `requirements.txt` is the shorter direct-dependency list; use the lock file for deployment.
+- `config.example.json`: template for the real `config.local.json` you create outside the workspace. The real file is needed for report runs and its path is supplied through `REPORT_CONFIG`.
+- `jenkins/active_choices.groovy`: paste this script into the Jenkins parameter UI once to enable the SQL dropdown. It is not another Jenkinsfile and the pipeline does not load it from disk at runtime.
+
+The agent also needs the approved IBM JDBC driver, any required license JAR, and the TLS certificate referenced by the database profile. The SQL scripts remain in your report Git repository. `README.md`, `VALIDATION.md`, `tests/`, and `examples/` support setup, verification, and development; production builds do not execute them.
 
 ## V1 flow
 
@@ -81,7 +97,9 @@ Restrict job Configure permissions, framework repository changes, database profi
 
 ### 3. Create the SQL catalog job
 
-Example name: `Reporting/STAGE-DB-REPORT-CATALOG`. In Pipeline script from SCM, point **Script Path** to `Jenkinsfile.catalog`.
+Example name: `Reporting/STAGE-DB-REPORT-CATALOG`. In Pipeline script from SCM, point **Script Path** to `Jenkinsfile`, the same file used by the report job.
+
+Add a **Choice parameter** named `RUN_MODE` with the single choice `REFRESH_CATALOG`. This mode needs only Git and Python; it does not access database credentials, mail settings, or stakeholder inputs.
 
 Enable **This project is parameterized** and manually create these **String parameters** with your environment's defaults:
 
@@ -97,6 +115,8 @@ Run the catalog job once. Confirm its archived `sql-catalog.json` lists the expe
 ### 4. Create the report job and parameters
 
 Example name: `Reporting/STAGE-DB-REPORT`. In Pipeline script from SCM, point **Script Path** to `Jenkinsfile`.
+
+Add a **Choice parameter** named `RUN_MODE` with the single choice `REPORT`. Existing jobs must add this parameter when adopting the consolidated Jenkinsfile.
 
 Manually create these parameters in the job UI, with the operator inputs first:
 

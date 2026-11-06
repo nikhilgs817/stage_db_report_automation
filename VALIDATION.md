@@ -25,3 +25,7 @@ No live DB2 query or real email has been attempted. Jenkins pipeline execution a
 Use the first-run acceptance steps in README.md. Confirm package/driver compatibility, effective service-account read permissions, TLS hostname validation, representative report types and sizes, failure notification, and retention before sending actual reports.
 
 Build status and report-generation status differ deliberately: an XLSX may be generated successfully while SMTP delivery fails, which fails the Jenkins build. Relay acceptance does not prove mailbox delivery. Jenkins monitoring must cover bootstrap checkout failure, unavailable agents/controllers, cleanup failures that remove the mailer, and a failed mail relay.
+
+## Jenkinsfile consolidation — 6 November 2026
+
+Catalog refresh and report generation now share one `Jenkinsfile`, selected by the UI-only `RUN_MODE` parameter. The dedicated catalog and report jobs retain separate parameter sets. The two production Python files are unchanged. Review confirms that catalog mode does not call database or email operations. Jenkins controller execution remains an environment acceptance check; no live Jenkins execution is claimed for this change.
