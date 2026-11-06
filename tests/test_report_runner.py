@@ -264,7 +264,7 @@ class WorkbookTests(unittest.TestCase):
         self.assertFalse(self.target.exists())
 
 
-class GitCatalogTests(unittest.TestCase):
+class GitCheckoutTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
@@ -283,19 +283,19 @@ class GitCatalogTests(unittest.TestCase):
     def git(self, *args):
         return subprocess.run(["git", "-C", str(self.repo), *args], check=True, capture_output=True, text=True).stdout
 
-    def test_catalog_only_lists_committed_sql_with_full_revision(self):
+    def test_tracked_sql_lists_only_committed_sql_files(self):
         (self.repo / "untracked.sql").write_text("SELECT 2", encoding="utf-8")
-        output = Path(self.tmp.name) / "catalog.json"
+        self.assertEqual(runner.tracked_sql(self.repo), ["monthly/report.sql"])
+        self.assertEqual(runner.head_commit(self.repo), self.sha)
+
+    def test_catalog_command_is_removed(self):
         result = subprocess.run(
-            [sys.executable, str(ROOT / "report_runner.py"), "catalog", "--repo-dir", str(self.repo), "--output", str(output)],
+            [sys.executable, str(ROOT / "report_runner.py"), "catalog", "--repo-dir", str(self.repo)],
             capture_output=True, text=True,
         )
-        self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
-        catalog = json.loads(output.read_text(encoding="utf-8"))
-        self.assertEqual(catalog["commit"], self.sha)
-        self.assertEqual(catalog["choices"], [f"monthly/report.sql|{self.sha}"])
+        self.assertNotEqual(result.returncode, 0)
 
-    def test_catalog_excludes_git_symlink_mode_even_for_regular_worktree_file(self):
+    def test_tracked_sql_excludes_git_symlink_mode_even_for_regular_worktree_file(self):
         # Windows Git can materialize a symlink as an ordinary text file. Its
         # committed tree mode must still exclude it from selectable reports.
         link = self.repo / "shortcut.sql"
