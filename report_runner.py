@@ -63,7 +63,7 @@ def safe_script_path(value: str) -> str:
 
 def parse_selection(value: str) -> tuple[str, str]:
     if not isinstance(value, str) or value.count("|") != 1:
-        raise ReportError("SCRIPT_SELECTION must come from the SQL catalog (path|40-character Git commit).")
+        raise ReportError("SCRIPT_SELECTION must come from the SQL dropdown (path|40-character Git commit).")
     path, commit = value.split("|")
     safe_script_path(path)
     if not SHA_RE.fullmatch(commit):
@@ -153,7 +153,7 @@ def read_sql_at_commit(repo_dir: Path, path: str, commit: str, max_bytes: int = 
     """Check the pinned revision and clean worktree, then read immutable Git bytes."""
     path, commit = parse_selection(f"{path}|{commit}")
     if head_commit(repo_dir) != commit:
-        raise ReportError("The checked-out report revision differs from SCRIPT_SELECTION; refresh the catalog and retry.")
+        raise ReportError("The checked-out report revision differs from SCRIPT_SELECTION; reopen Build with Parameters and retry.")
     if path not in tracked_sql(repo_dir):
         raise ReportError("The selected SQL file is not a safe, committed file at the selected revision.")
     selected_file = checked_file(repo_dir, path)
@@ -475,17 +475,6 @@ def prepare_command(args: argparse.Namespace) -> None:
     print("Report selection and recipients validated.")
 
 
-def catalog_command(args: argparse.Namespace) -> None:
-    repo = Path(args.repo_dir)
-    commit = head_commit(repo)
-    paths = tracked_sql(repo)
-    if not paths:
-        raise ReportError("No safe, committed .sql files were found in the report repository.")
-    atomic_json(Path(args.output), {"version": 1, "commit": commit,
-                                  "choices": [f"{path}|{commit}" for path in paths]})
-    print(f"Published {len(paths)} SQL script choices at revision {commit}.")
-
-
 def run_command(args: argparse.Namespace) -> None:
     output = Path(args.output_dir)
     output.mkdir(parents=True, exist_ok=True)
@@ -499,7 +488,7 @@ def run_command(args: argparse.Namespace) -> None:
         result.update(script=path, commit=commit)
         repo = Path(args.repo_dir)
         if head_commit(repo) != commit:
-            raise ReportError("The checked-out report revision differs from SCRIPT_SELECTION; refresh the catalog and retry.")
+            raise ReportError("The checked-out report revision differs from SCRIPT_SELECTION; reopen Build with Parameters and retry.")
         config = load_config()
         sql = read_sql_at_commit(repo, path, commit, config["runtime"]["max_sql_bytes"])
         queries = split_read_queries(sql)
@@ -524,10 +513,6 @@ def main(argv: list[str] | None = None) -> int:
     prepare = commands.add_parser("prepare", help="Validate the UI selection and recipients before checkout")
     prepare.add_argument("--state-dir", default=".run")
     prepare.set_defaults(handler=prepare_command)
-    catalog = commands.add_parser("catalog", help="Publish SQL choices from an existing Git checkout")
-    catalog.add_argument("--repo-dir", default=".reports")
-    catalog.add_argument("--output", default="sql-catalog.json")
-    catalog.set_defaults(handler=catalog_command)
     run = commands.add_parser("run", help="Run the selected SQL file and atomically write XLSX/result.json")
     run.add_argument("--repo-dir", default=".reports")
     run.add_argument("--state-dir", default=".run")
